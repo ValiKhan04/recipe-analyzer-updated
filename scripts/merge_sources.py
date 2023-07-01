@@ -1,0 +1,235 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Functions to merge data files.
+
+This produces an output which is a list of JSON like objects
+with the same format as the FoodDataCentral API.
+"""
+from collections import defaultdict
+from datetime import datetime
+
+
+def _convert_date_format(d):
+    """Convert from file format to API format."""
+    if not d:
+        return None
+    dt = datetime.strptime(d, '%Y-%m-%d')
+    return '%d/%d/%d' % (dt.month, dt.day, dt.year)
+
+
+_NEW_UNIT_NAMES = {
+    'G': 'g',
+    'UG': '\u00b5g',
+    'IU': 'IU',
+    'kJ': 'kJ',
+    'MG_ATE': 'mg_ATE',
+    'MG': 'mg',
+    'KCAL': 'kcal',
+}
+_UNKNOWN_UNIT = 'UNKNOWN_UNIT'
+
+
+def _remove_nones(obj):
+    """Return a new object ommitting keys whose value is none."""
+    return {key: value for key, value in obj.items() if value is not None}
+
+
+def _convert_nutrient(nutrient):
+    value = float(nutrient.rank) if nutrient.rank else None
+    #print("Here1: "+ str(value))
+    return _remove_nones({
+        'id': int(nutrient.nutrient_id),
+        'name': nutrient.name,
+        'unitName': _NEW_UNIT_NAMES.get(nutrient.unit_name, _UNKNOWN_UNIT),
+        'nutrient_nbr': nutrient.nutrient_nbr,
+
+        # This used to caste to int but I changed it to float, 
+        # I am unaware if this will create any inaccuracy, the value it was
+        # previously messing up with was 280.0
+        'rank': float(nutrient.rank) if nutrient.rank else None
+    })
+
+
+def _convert_food_nutrient(food_nutrient, nutrients):
+    # In order to ensure that _NEW_UNIT_NAMES covers all nutrients that
+    # are used in the Branded Food data, we check here for _UNKNOWN_UNIT
+    #print("now here")
+    #print(nutrients)
+
+    #print("next")
+    #print(food_nutrient.nutrient_id)
+    #print("through 1")
+    #print(nutrients[int(food_nutrient.nutrient_id)]['unitName'])
+    assert nutrients[int(food_nutrient.nutrient_id)]['unitName'] != _UNKNOWN_UNIT, \
+        food_nutrient
+    #print("through 2")
+    return {
+        "type": "FoodNutrient",
+        "id": int(food_nutrient.id),
+        "nutrient": nutrients[int(food_nutrient.nutrient_id)],
+        "amount": float(food_nutrient.amount)
+    }
+
+
+# def _merge(branded_food, food, food_nutrients, nutrients):
+#     assert food.data_type == 'branded_food'
+#     assert food.fdc_id == branded_food.fdc_id
+#     assert food.publication_date
+#     for food_nutrient in food_nutrients:
+#         assert food_nutrient.fdc_id == branded_food.fdc_id
+#     #print("here")
+#     nutrients = [
+#             _convert_food_nutrient(food_nutrient, nutrients)
+#             for food_nutrient in food_nutrients
+#             if food_nutrient.nutrient_id in nutrients]
+#     #print(nutrients)
+#     return _remove_nones({
+#         'foodClass': 'Branded',
+#         'description': food.description,
+#         'foodNutrients': [
+#             _convert_food_nutrient(food_nutrient, nutrients)
+#             for food_nutrient in food_nutrients
+#             if food_nutrient.nutrient_id in nutrients],
+#         'brandOwner': branded_food.brand_owner,
+#         'gtinUpc': branded_food.gtin_upc,
+#         'dataSource': branded_food.data_source,
+#         'ingredients': branded_food.ingredients,
+#         "marketCountry": branded_food.market_country,
+#         'modifiedDate': _convert_date_format(branded_food.modified_date),
+#         'availableDate': _convert_date_format(branded_food.available_date),
+#         'discontinuedDate': _convert_date_format(branded_food.discontinued_date),
+#         'servingSize': float(branded_food.serving_size) if branded_food.serving_size else None,
+#         'servingSizeUnit': branded_food.serving_size_unit or None,
+#         'householdServingFullText': branded_food.household_serving_fulltext or None,
+#         'brandedFoodCategory': branded_food.branded_food_category,
+#         'fdcId': int(branded_food.fdc_id),
+#         'dataType': 'Branded',
+#         'publicationDate': _convert_date_format(food.publication_date),
+#         'foodPortions': [],
+#         # additions
+#         'brand_name': branded_food.brand_name,
+#         'subbrand_name': branded_food.subbrand_name,
+#         'not_a_significant_source_of': branded_food.not_a_significant_source_of
+
+
+#     })
+
+def _merge(branded_food, food, food_nutrients, nutrients):
+    assert food.data_type == 'branded_food'
+    assert food.fdc_id == branded_food.fdc_id
+    assert food.publication_date
+    
+    
+    for food_nutrient in food_nutrients:
+        assert food_nutrient.fdc_id == branded_food.fdc_id
+    
+
+    # #print("nutrients")
+    nutrients = {value['id']: value for value in nutrients.values()}
+    # #print(nutrients)
+
+    # #print("next")
+    # for food_nutrient in nutrients:
+    #     nutrient_id = nutrients[food_nutrient]['id']
+    #     #print(nutrient_id)
+
+    # for food_nutrient in food_nutrients:
+    #     #print("right here")
+    #     #print(food_nutrient.nutrient_id)
+    #     if food_nutrient.nutrient_id in nutrients:
+    #         #print("found")
+
+    # #print("not here")
+    # num = 2047
+    # if num in nutrients:
+    #     #p("we found it")
+    
+    # for food_nutrient in food_nutrients:
+    #     #p("this value is from food_nutrients")
+    #     #p(food_nutrient.nutrient_id)
+    #     theOther = int(food_nutrient.nutrient_id)
+    #     if theOther in nutrients:
+    #         #print("did it hit")
+    nutrients = [
+        _convert_food_nutrient(food_nutrient, nutrients)
+        for food_nutrient in food_nutrients
+        if int(food_nutrient.nutrient_id) in nutrients
+    ]
+
+    #p("nutrients:", nutrients)
+    
+    return _remove_nones({
+        'foodClass': 'Branded',
+        'description': food.description,
+        'foodNutrients': nutrients,
+        'brandOwner': branded_food.brand_owner,
+        'gtinUpc': branded_food.gtin_upc,
+        'dataSource': branded_food.data_source,
+        'ingredients': branded_food.ingredients,
+        "marketCountry": branded_food.market_country,
+        'modifiedDate': _convert_date_format(branded_food.modified_date),
+        'availableDate': _convert_date_format(branded_food.available_date),
+        'discontinuedDate': _convert_date_format(branded_food.discontinued_date),
+        'servingSize': float(branded_food.serving_size) if branded_food.serving_size else None,
+        'servingSizeUnit': branded_food.serving_size_unit or None,
+        'householdServingFullText': branded_food.household_serving_fulltext or None,
+        'brandedFoodCategory': branded_food.branded_food_category,
+        'fdcId': int(branded_food.fdc_id),
+        'dataType': 'Branded',
+        'publicationDate': _convert_date_format(food.publication_date),
+        'foodPortions': [],
+        'brand_name': branded_food.brand_name,
+        'subbrand_name': branded_food.subbrand_name,
+        'not_a_significant_source_of': branded_food.not_a_significant_source_of
+    })
+
+
+
+def merge_sources(raw_data):
+    """Merge all the sources in raw_data.
+
+    Each field in raw_data represents a single CSV file.  This function
+    merges these into a single list, where each element of the list is
+    a JSON-like object containing the same data as the output of the
+    FoodDataCentral API.
+
+    Args:
+        raw_data: A `RawData`.
+
+    Returns:
+        A list of JSON-like objects.
+    """
+    print('merging raw data rows')
+    # Convert branded_food_data.foods to dict for merging.
+    foods = {food.fdc_id: food for food in raw_data.foods}
+    # Convert nutrients to a dict for merging.
+    # Skip nutrients with rank '' because it's not clear how to handle them.
+    nutrients = {
+	# April 2021: food_nutrients.csv nutrient_id field contains in fact the nutrient_nbr field 
+
+        nutrient.nutrient_nbr: _convert_nutrient(nutrient)
+        for nutrient in raw_data.nutrients}
+
+    food_nutrients = defaultdict(list)
+    for food_nutrient in raw_data.food_nutrients:
+        food_nutrients[food_nutrient.fdc_id].append(food_nutrient)
+
+    result = []
+    for branded_food in raw_data.branded_foods:
+        fdc_id = branded_food.fdc_id
+        #print(fdc_id)
+        result.append(_merge(
+            branded_food, foods[fdc_id], food_nutrients[fdc_id], nutrients))
+
+    return result

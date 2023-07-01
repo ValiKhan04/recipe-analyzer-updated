@@ -1,0 +1,8 @@
+docs/**
+env/**
+node_modules/**
+src/client/**
+tests/**
+dist/*.js
+dist/test_harness*
+webpack.config.js
