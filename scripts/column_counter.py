@@ -18,7 +18,7 @@ def print_column(column_index, path):
 
 # Example usage
 csv_directory = "/output"
-csv_file = 'branded_food.csv'
+csv_file = 'merged_deleted_duplicates.csv'
 
 
 
@@ -38,24 +38,24 @@ with open(file_path, 'r') as file:
             print_column(column_index, file_path)
             column_index+=1
 # SAMPLE DATA OUTPUT #
-# branded_food.csv contents
-# fdc_id: 1845297
-# brand_owner: 1830879
-# brand_name: 1297928
-# subbrand_name: 87051
-# gtin_upc: 1845297
-# ingredients: 1839909
-# not_a_significant_source_of: 73496
-# serving_size: 1834517
-# serving_size_unit: 1826269
-# household_serving_fulltext: 765642
-# branded_food_category: 1834725
-# data_source: 1845297
-# package_weight: 706033
-# modified_date: 1845277
-# available_date: 1845297
-# market_country: 1845297
-# discontinued_date: 0
+# branded_food.csv contents #
+# fdc_id: 1845297 #
+# brand_owner: 1830879 #
+# brand_name: 1297928 #
+# subbrand_name: 87051 #
+# gtin_upc: 1845297 #
+# ingredients: 1839909 #
+# not_a_significant_source_of: 73496 #
+# serving_size: 1834517 #
+# serving_size_unit: 1826269 #
+# household_serving_fulltext: 765642 #
+# branded_food_category: 1834725 #
+# data_source: 1845297 #
+# package_weight: 706033 #
+# modified_date: 1845277 #
+# available_date: 1845297 #
+# discontinued_date: 0 #
+# market_country: 1845297 #
+# trade_channel: 15579 #
 # preparation_state_code: 39151
-# trade_channel: 15579
-# short_description: 39267
+# short_description: 39267 #
